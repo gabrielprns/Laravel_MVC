@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Serie;
+use App\Models\Series;
 use Illuminate\Http\Request;
 use DB;
-
+use App\Http\Requests\SeriesFormRequest;
 class SeriesController extends Controller
 {
     
     public function index(Request $request){
-        $series = Serie::query()->orderBy('nome')->get();
+        $series = Series::all();
         $mensagemSucesso = $request->session()->get("mensagem.sucesso");
       
         return view('series.index')->with("series", $series)->with('mensagemSucesso', $mensagemSucesso);
@@ -22,8 +22,25 @@ class SeriesController extends Controller
         
     }
 
-    public function store(Request $request){
-        $serie = Serie::create($request->all());
+    public function store(SeriesFormRequest $request){
+        
+        $serie = Series::create($request->all());
+
+        for($i =1; $i <= $request->seasonQty; $i++){
+            $season = $serie->seasons()->create([
+                'number'=> $i,
+
+            ]);
+
+        }
+
+        for($j =1; $j <= $request->EpisodesPerSeason; $j++){
+            $season->episodes()->create([
+                'number'=> $j,
+
+            ]);
+
+        }
         
 
         return redirect()->route('series.index')->with("mensagem.sucesso","Série '{$serie->nome}' adicionada com sucesso");
@@ -31,16 +48,26 @@ class SeriesController extends Controller
 
     }
 
-    public function destroy(Serie $series,Request $request){
+    public function destroy(Series $series,Request $request){
 
-        $series=Serie::destroy($series->id);
+        $series=Series::destroy($series->id);
         
 
         return redirect()->route('series.index')->with("mensagem.sucesso","Série removida com sucesso");
 
     }
 
-    public function edit(Serie $series){
+    public function update(Series $series, SeriesFormRequest $request){
+
+        $series->fill($request->all());
+        $series-> save();
+        
+
+        return redirect()->route('series.index')->with("mensagem.sucesso","Série '{$series->nome}' atualizada com sucesso");
+
+    }
+
+    public function edit(Series $series){
         return view('series.edit')->with('serie', $series);
     }
       
